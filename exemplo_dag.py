@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta
 from airflow import DAG
-from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
+import logging
+
+# Obter o logger do Airflow
+logger = logging.getLogger("airflow.task")
 
 # Argumentos padrão para a DAG
 default_args = {
@@ -24,24 +27,16 @@ dag = DAG(
     tags=['exemplo', 'teste'],
 )
 
-# Tarefa que executa um comando bash
-t1 = BashOperator(
-    task_id='print_date',
-    bash_command='date > /tmp/current_date.txt && echo "Data atual salva em /tmp/current_date.txt"',
-    dag=dag,
-)
-
 # Função Python para ser executada por uma tarefa
-def print_hello():
-    print("Olá do Airflow!")
+def log_hello():
+    logger.info("Olá do Airflow!")
+    logger.info("Esta mensagem será exibida nos logs do Airflow")
+    logger.info("Você pode ver essa mensagem nos logs da tarefa")
     return 'Olá do Airflow!'
 
 # Tarefa que executa uma função Python
 t2 = PythonOperator(
-    task_id='print_hello',
-    python_callable=print_hello,
+    task_id='log_hello',
+    python_callable=log_hello,
     dag=dag,
 )
-
-# Definição da ordem de execução das tarefas
-t1 >> t2
