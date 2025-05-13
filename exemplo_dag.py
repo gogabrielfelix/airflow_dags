@@ -18,7 +18,7 @@ dag = DAG(
     'exemplo_hello_world',
     default_args=default_args,
     description='Uma DAG de exemplo simples para testar o Airflow',
-    schedule_interval=timedelta(days=1),
+    schedule=timedelta(days=1),
     start_date=datetime(2023, 1, 1),
     catchup=False,
     tags=['exemplo', 'teste'],
@@ -44,4 +44,4 @@ t2 = PythonOperator(
 )
 
 # Definição da ordem de execução das tarefas
-t1 >> t2 
+t1 >> t2
