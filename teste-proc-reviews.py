@@ -93,7 +93,7 @@ def process_stamped_reviews(ds, **kwargs):
     logger = logging.getLogger(__name__)
     
     # Obter data de execução
-    execution_date = kwargs.get('execution_date', datetime.now()).strftime('%Y-%m-%d')
+    execution_date = kwargs.get('logical_date', datetime.now()).strftime('%Y-%m-%d')
     
     # Caminho da camada Bronze
     bronze_bucket = 'lakehouse-gocase'
@@ -249,7 +249,7 @@ def check_source_data(**context):
     logger = logging.getLogger(__name__)
     
     try:
-        execution_date = context['execution_date'].strftime('%Y-%m-%d')
+        execution_date = context['logical_date'].strftime('%Y-%m-%d')
         logger.info(f"Verificando dados para a data: {execution_date}")
         
         s3_hook = S3Hook(aws_conn_id='aws_default')
