@@ -268,7 +268,6 @@ def check_source_data(**context):
 check_data_task = PythonOperator(
     task_id='check_source_data',
     python_callable=check_source_data,
-    provide_context=True,
     dag=dag,
 )
 
@@ -276,7 +275,6 @@ check_data_task = PythonOperator(
 process_task = PythonOperator(
     task_id='process_stamped_reviews',
     python_callable=process_stamped_reviews,
-    provide_context=True,
     dag=dag,
 )
 
