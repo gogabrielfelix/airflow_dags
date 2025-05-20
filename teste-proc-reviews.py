@@ -16,7 +16,7 @@ from typing import List, Dict, Any, Optional
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from airflow.models import Variable
-from airflow.hooks.S3_hook import S3Hook
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 # Configurações do DAG
 default_args = {
