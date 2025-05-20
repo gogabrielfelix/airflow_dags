@@ -245,24 +245,47 @@ def process_stamped_reviews(ds, **kwargs):
 # Função para verificar se os dados fonte existem
 def check_source_data(**context):
     """Verifica se os dados fonte existem no S3 antes de iniciar o processamento"""
-    execution_date = context['execution_date'].strftime('%Y-%m-%d')
-    s3_hook = S3Hook(aws_conn_id='aws_default')
-    bucket = 'lakehouse-gocase'
-    prefix = f'bronze/stamped/reviews/{execution_date}/'
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
     
-    # Listar objetos para verificar se existem arquivos
-    objects = s3_hook.list_keys(bucket_name=bucket, prefix=prefix)
+    try:
+        execution_date = context['execution_date'].strftime('%Y-%m-%d')
+        logger.info(f"Verificando dados para a data: {execution_date}")
+        
+        s3_hook = S3Hook(aws_conn_id='aws_default')
+        bucket = 'lakehouse-gocase'
+        prefix = f'bronze/stamped/reviews/{execution_date}/'
+        
+        logger.info(f"Conectando ao bucket S3: {bucket}")
+        logger.info(f"Procurando arquivos no prefixo: {prefix}")
+        
+        # Listar objetos para verificar se existem arquivos
+        try:
+            objects = s3_hook.list_keys(bucket_name=bucket, prefix=prefix)
+            logger.info(f"Encontrados {len(objects) if objects else 0} objetos no total")
+        except Exception as e:
+            logger.error(f"Erro ao listar objetos do S3: {str(e)}")
+            raise ValueError(f"Erro ao acessar S3: {str(e)}")
+        
+        if not objects:
+            logger.error(f"Nenhum arquivo encontrado em {prefix}")
+            raise ValueError(f"Não foram encontrados dados em {prefix}")
+        
+        # Filtrar apenas arquivos parquet
+        parquet_files = [obj for obj in objects if obj.endswith('.parquet')]
+        logger.info(f"Encontrados {len(parquet_files)} arquivos Parquet")
+        
+        if not parquet_files:
+            logger.error(f"Nenhum arquivo Parquet encontrado em {prefix}")
+            raise ValueError(f"Não foram encontrados arquivos Parquet em {prefix}")
+        
+        return f"Dados encontrados em {prefix}: {len(parquet_files)} arquivos Parquet"
     
-    if not objects:
-        raise ValueError(f"Não foram encontrados dados em {prefix}")
-    
-    # Filtrar apenas arquivos parquet
-    parquet_files = [obj for obj in objects if obj.endswith('.parquet')]
-    
-    if not parquet_files:
-        raise ValueError(f"Não foram encontrados arquivos Parquet em {prefix}")
-    
-    return f"Dados encontrados em {prefix}: {len(parquet_files)} arquivos Parquet"
+    except Exception as e:
+        logger.error(f"Erro durante a verificação dos dados: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 # Task para verificar os dados fonte
 check_data_task = PythonOperator(

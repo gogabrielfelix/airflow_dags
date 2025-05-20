@@ -1,0 +1,7 @@
+{
+    "conn_id": "aws_default",
+    "conn_type": "aws",
+    "extra": {
+        "region_name": "us-east-1"
+    }
+} 
