@@ -33,7 +33,7 @@ dag = DAG(
     'stamped_reviews_transformation',
     default_args=default_args,
     description='Transforma dados de reviews da Stamped da Bronze para Silver',
-    schedule_interval='0 6 * * *',  # Diariamente às 6h
+    schedule='0 6 * * *',  # Diariamente às 6h
     catchup=False,
 )
 
