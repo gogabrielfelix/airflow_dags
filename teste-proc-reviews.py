@@ -46,10 +46,19 @@ def list_s3_files(bucket: str, prefix: str) -> List[str]:
 # Função auxiliar para ler arquivos Parquet do S3
 def read_parquet_from_s3(bucket: str, key: str) -> pd.DataFrame:
     """Lê um arquivo Parquet diretamente do S3 e retorna como DataFrame pandas"""
-    s3_hook = S3Hook(aws_conn_id='aws_default')
-    data = s3_hook.read_key(key=key, bucket_name=bucket)
-    buffer = BytesIO(data)
-    return pd.read_parquet(buffer)
+    try:
+        s3_hook = S3Hook(aws_conn_id='aws_default')
+        s3_client = s3_hook.get_conn()
+        
+        # Usar get_object em vez de read_key para obter os dados binários diretamente
+        response = s3_client.get_object(Bucket=bucket, Key=key)
+        data = response['Body'].read()
+        
+        buffer = BytesIO(data)
+        return pd.read_parquet(buffer)
+    except Exception as e:
+        logging.error(f"Erro ao ler arquivo {key} do bucket {bucket}: {str(e)}")
+        raise
 
 # Função auxiliar para escrever DataFrame em Parquet no S3
 def write_parquet_to_s3(df: pd.DataFrame, bucket: str, key: str, partition_cols: Optional[List[str]] = None) -> None:
@@ -121,15 +130,22 @@ def process_stamped_reviews(ds, **kwargs):
     
     for parquet_file in parquet_files:
         try:
-            logger.info(f"Lendo arquivo: {parquet_file}")
+            logger.info(f"Iniciando leitura do arquivo: {parquet_file}")
+            logger.info(f"Bucket: {bronze_bucket}, Key: {parquet_file}")
+            
             df = read_parquet_from_s3(bronze_bucket, parquet_file)
+            
             if not df.empty:
+                logger.info(f"Arquivo lido com sucesso. Shape: {df.shape}")
+                logger.info(f"Colunas encontradas: {df.columns.tolist()}")
                 dataframes.append(df)
                 logger.info(f"Arquivo {parquet_file} lido com {len(df)} registros")
             else:
                 logger.warning(f"Arquivo {parquet_file} está vazio")
         except Exception as e:
             logger.error(f"Erro ao ler arquivo {parquet_file}: {str(e)}")
+            logger.error("Detalhes do erro:", exc_info=True)
+            continue  # Continua para o próximo arquivo mesmo se houver erro
     
     if not dataframes:
         logger.warning("Nenhum dado válido encontrado nos arquivos Parquet")
